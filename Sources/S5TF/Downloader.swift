@@ -31,13 +31,13 @@ public class Downloader: NSObject {
     /// Downloads a file asynchronously.
     ///
     /// - Parameters:
-    ///   - fileAt: the remote url.
-    ///   - cacheName: the directory in the base directory where the file will be saved. This
-    ///                directory should be consistent with subsequent requests to enable caching.
-    ///   - fileName: the desired file name of the local file.
-    ///   - completionHandler: will be called upon completion. First item might be the local path,
-    ///                        second item might be an error. If the item can't be saved to the local
-    ///                        url an error will be returned.
+    ///   - `fileAt`: the remote url
+    ///   - `cacheName`: the directory in the base directory where the file will be saved. This
+    ///                  directory should be consistent with subsequent requests to enable caching.
+    ///   - `fileName`: the desired file name of the local file.
+    ///   - `completionHandler`: will be called upon completion. First item might be the local path,
+    ///                          second item might be an error. If the item can't be saved to the local
+    ///                          url an error will be returned.
     ///
     /// ### Usage Example: ###
     ///
@@ -66,6 +66,8 @@ public class Downloader: NSObject {
                          cacheName: String,
                          fileName: String,
                          completionHandler: @escaping (URL?, Error?) -> Void) {
+        print("Downloading: \(remoteUrl)")
+
         // Create a cache directory if non-existent.
         let cacheURL = baseURL.appendingPathComponent(cacheName, isDirectory: true)
         if !FileManager.default.fileExists(atPath: cacheURL.absoluteString) {
@@ -80,6 +82,7 @@ public class Downloader: NSObject {
         // Check whether the file is already downloaded.
         let saveURL = cacheURL.appendingPathComponent(fileName, isDirectory: false)
         if FileManager.default.fileExists(atPath: saveURL.absoluteString) {
+            print("Found cached version at: \(saveURL)")
             completionHandler(saveURL, nil)
             return
         } else {
@@ -91,7 +94,7 @@ public class Downloader: NSObject {
         startingTime = Date()
     }
 
-    /// Downloads a file asynchronously.
+    /// Downloads a file synchronously.
     ///
     /// - Parameters:
     ///   - `fileAt`: the remote url
@@ -103,14 +106,14 @@ public class Downloader: NSObject {
     ///
     /// - Download MNIST files:
     ///
-    ///   `````
+    ///   ```
     ///   let localURL = Downloader.download(
     ///       fileAt: URL(string: "https://storage.googleapis.com/cvdf-datasets/mnist/train-images-idx3-ubyte.gz")!,
     ///       cacheName: "mnist",
     ///       fileName: "train-images.gz"
     ///   )
     ///   // Use the URL here.
-    ///   `````
+    ///   ```
     static public func download(fileAt remoteUrl: URL,
                                 cacheName: String,
                                 fileName: String) -> URL? {
@@ -119,7 +122,7 @@ public class Downloader: NSObject {
         var localURL: URL?
         downloader.download(fileAt: remoteUrl,
                             cacheName: cacheName,
-                            fileName: "train-images.gz") { url, error in
+                            fileName: fileName) { url, error in
             guard let url = url else {
                 if let error = error { print(error) }
                 fatalError("Data not downloaded.")
@@ -167,7 +170,6 @@ extension Downloader: URLSessionDownloadDelegate {
                            downloadTask: URLSessionDownloadTask,
                            didFinishDownloadingTo location: URL) {
         print() // Keep the progress bar.
-
         // Move the file to the desired local URL.
         guard let saveURL = self.saveURL else {
             fatalError("Done downloading, but I don't know where to move the file. ")
